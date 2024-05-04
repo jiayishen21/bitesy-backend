@@ -1,3 +1,4 @@
+import google.generativeai as genai
 from django.http import JsonResponse
 from django.core.files.base import ContentFile
 from django.conf import settings
@@ -8,6 +9,54 @@ from google.cloud import storage
 from google.oauth2 import service_account
 import requests
 import uuid
+
+
+# Define project information
+from vertexai.preview.vision_models import Image
+from vertexai.preview.vision_models import ImageQnAModel
+import vertexai
+
+# Initialize Vertex AI
+
+vertexai.init(project=settings.PROJECT_ID, location=settings.LOCATION)
+
+
+image_qna_model = ImageQnAModel.from_pretrained("imagetext@001")
+
+genai.configure(api_key=settings.GEMINI_API_KEY)
+
+# Set up the model
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 0,
+    "max_output_tokens": 8192,
+}
+
+safety_settings = [
+    {
+        "category": "HARM_CATEGORY_HARASSMENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    },
+    {
+        "category": "HARM_CATEGORY_HATE_SPEECH",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    },
+    {
+        "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    },
+    {
+        "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+        "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+    },
+]
+
+model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest",
+                              generation_config=generation_config,
+                              safety_settings=safety_settings)
+
+convo = model.start_chat(history=[])
 
 
 @require_http_methods(["GET"])
@@ -58,8 +107,11 @@ def add_experience(request):
             content_type=response.headers['Content-Type']
         )
 
+        calories = process_calories(blob.public_url)
+
         experience = Experience(
             image=blob.public_url,
+            calories=calories,
             title=request.POST['title'],
             location=request.POST['location'],
         )
@@ -75,8 +127,27 @@ def add_experience(request):
             'time': experience.time.isoformat()
         }
 
-        return JsonResponse({'experience': data}, status=201)
+        return JsonResponse({'experience': data, }, status=201)
 
     except Exception as e:
         print(e)
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def process_calories(url):
+
+    # Load the image file as Image object
+    cloud_next_image = Image.load_from_file(url)
+
+    # Ask a question about the image
+    res = image_qna_model.ask_question(
+        image=cloud_next_image,
+        question="Food name and number of servings in the image. Must give the answer in the format 'food name: number of servings' e.g. 'apple: 2'",
+        number_of_results=3,
+    )
+    print(res)
+
+    convo.send_message(
+        f"how many calories are in the following food items: {res[0]}. State only the calories with no explanations or any other words.")
+
+    return convo.last.text

@@ -29,6 +29,11 @@ GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+PROJECT_ID = os.getenv("PROJECT_ID")
+LOCATION = os.getenv("LOCATION")
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
