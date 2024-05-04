@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 django = "*"
+google-cloud-storage = "*"
+django-storages = "*"
+python-dotenv = "*"
+google-auth = "*"
 
 [dev-packages]
 

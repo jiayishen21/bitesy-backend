@@ -4,8 +4,8 @@ from django.db import models
 
 
 class Experience(models.Model):
-    image = models.CharField(max_length=100)
-    title = models.CharField(max_length=300)
-    calories = models.IntegerField()
-    location = models.CharField(max_length=100)
-    time = models.DateTimeField()
+    image = models.CharField(max_length=120, blank=False)
+    title = models.CharField(max_length=300, default='')
+    calories = models.IntegerField(default=0)
+    location = models.CharField(max_length=200)
+    time = models.DateTimeField(auto_now_add=True)
