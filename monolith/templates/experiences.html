@@ -1,0 +1,18 @@
+<html>
+
+<body>
+  <h1>Experiences</h1>
+  {% for experience in experiences %}
+  <li>
+    <p>
+      {{ experience.title }}
+    </p>
+    <p>
+      {{ experience.calories }} calories
+    </p>
+
+  </li>
+  {% endfor %}
+</body>
+
+</html>
