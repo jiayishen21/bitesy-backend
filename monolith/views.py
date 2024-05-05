@@ -67,7 +67,7 @@ def get_experiences(request):
         experiences_list = list(experiences.values(
             'image', 'title', 'calories', 'location', 'time'))  # manual serialization
         # 'safe=False' is needed when passing a list
-        return JsonResponse(experiences_list, safe=False)
+        return JsonResponse({'experiences': experiences_list}, safe=False)
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
