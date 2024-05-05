@@ -65,7 +65,8 @@ def get_experiences(request):
         experiences = Experience.objects.all().order_by('-time')
         # Convert the queryset into a list of dicts
         experiences_list = list(experiences.values(
-            'image1', 'image2', 'title', 'calories', 'location', 'time'))  # manual serialization
+            # manual serialization
+            'id', 'image1', 'image2', 'title', 'calories', 'location', 'time'))
         # 'safe=False' is needed when passing a list
         return JsonResponse({'experiences': experiences_list}, safe=False)
 
