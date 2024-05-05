@@ -142,12 +142,16 @@ def process_calories(url):
     # Ask a question about the image
     res = image_qna_model.ask_question(
         image=cloud_next_image,
-        question="Food name and number of servings in the image. Must give the answer in the format 'food name: number of servings' e.g. 'apple: 2'",
+        question="Food name and number of servings",
         number_of_results=3,
     )
     print(res)
 
-    convo.send_message(
-        f"how many calories are in the following food items: {res[0]}. State only the calories with no explanations or any other words.")
+    prompt = f"i told vertexai to summarize an image, and it gave a couple of possible outputs. three possible interpretations of the image are: \
+    {res[0]}, {res[1]}, {res[2]}. \
+    based on the ones that make sense, can you tell me how many calories are in the image? output only a single calorie count, not explanations."
+
+    convo.send_message(prompt)
+    print(convo.last.text)
 
     return convo.last.text
