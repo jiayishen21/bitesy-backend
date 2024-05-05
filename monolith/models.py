@@ -4,7 +4,8 @@ from django.db import models
 
 
 class Experience(models.Model):
-    image = models.CharField(max_length=120, blank=False)
+    image1 = models.CharField(max_length=120, blank=False)
+    image2 = models.CharField(max_length=120, blank=False)
     title = models.CharField(max_length=300, default='')
     calories = models.CharField(max_length=30, default='0')
     location = models.CharField(max_length=200)

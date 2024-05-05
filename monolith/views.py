@@ -65,7 +65,7 @@ def get_experiences(request):
         experiences = Experience.objects.all().order_by('-time')
         # Convert the queryset into a list of dicts
         experiences_list = list(experiences.values(
-            'image', 'title', 'calories', 'location', 'time'))  # manual serialization
+            'image1', 'image2', 'title', 'calories', 'location', 'time'))  # manual serialization
         # 'safe=False' is needed when passing a list
         return JsonResponse({'experiences': experiences_list}, safe=False)
 
@@ -73,22 +73,10 @@ def get_experiences(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-@require_http_methods(["POST"])
 @csrf_exempt
+@require_http_methods(["POST"])
 def add_experience(request):
     try:
-        image_url = request.POST.get('image_url')
-        if not image_url:
-            return JsonResponse({'error': 'image_url is required'}, status=400)
-
-        # fetch the file from the url
-        response = requests.get(image_url)
-        if response.status_code != 200:
-            return JsonResponse({'error': 'image_url is invalid'}, status=400)
-
-        # prepare file content
-        image_content = ContentFile(response.content)
-
         # Load credentials using google-auth
         credentials = service_account.Credentials.from_service_account_file(
             settings.GOOGLE_APPLICATION_CREDENTIALS)
@@ -98,29 +86,47 @@ def add_experience(request):
             credentials=credentials)
         bucket = client.get_bucket(settings.GS_BUCKET_NAME)
 
-        extension = image_url.split('.')[-1]
-        # store the image with filename as uuid
-        blob = bucket.blob(f"{uuid.uuid4()}.{extension}")
+        file1 = request.FILES['image1']
+        extension1 = file1.name.split('.')[-1]
+        blob1 = bucket.blob(f"{uuid.uuid4()}.{extension1}")
 
-        blob.upload_from_string(
-            image_content.read(),
-            content_type=response.headers['Content-Type']
+        blob1.upload_from_file(
+            file1,
+            content_type=file1.content_type
         )
 
-        calories = process_calories(blob.public_url)
+        file2 = request.FILES['image2']
+        extension2 = file2.name.split('.')[-1]
+        blob2 = bucket.blob(f"{uuid.uuid4()}.{extension2}")
+
+        blob2.upload_from_file(
+            file2,
+            content_type=file2.content_type
+        )
+
+        calories = process_calories(blob1.public_url)
+
+        experience_title = ''
+        if 'title' in request.POST:
+            experience_title = request.POST['title']
+
+        if 'location' in request.POST:
+            experience_location = request.POST['location']
 
         experience = Experience(
-            image=blob.public_url,
+            image1=blob1.public_url,
+            image2=blob2.public_url,
             calories=calories,
-            title=request.POST['title'],
-            location=request.POST['location'],
+            title=experience_title,
+            location=experience_location,
         )
         experience.save()
 
         # manual serialization
         data = {
             'id': experience.id,
-            'image': experience.image,
+            'image1': experience.image1,
+            'image2': experience.image2,
             'title': experience.title,
             'calories': experience.calories,
             'location': experience.location,
@@ -130,7 +136,6 @@ def add_experience(request):
         return JsonResponse({'experience': data, }, status=201)
 
     except Exception as e:
-        print(e)
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -145,13 +150,11 @@ def process_calories(url):
         question="Food name and number of servings",
         number_of_results=3,
     )
-    print(res)
 
     prompt = f"i told vertexai to summarize an image, and it gave a couple of possible outputs. three possible interpretations of the image are: \
     {res[0]}, {res[1]}, {res[2]}. \
     based on the ones that make sense, can you tell me how many calories are in the image? output only a single calorie count, not explanations."
 
     convo.send_message(prompt)
-    print(convo.last.text)
 
     return convo.last.text

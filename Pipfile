@@ -11,6 +11,8 @@ python-dotenv = "*"
 google-auth = "*"
 google-generativeai = "*"
 google-cloud-aiplatform = "*"
+pip = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
